@@ -18,8 +18,6 @@ func (e contextualError) Unwrap() error {
 	return e.err
 }
 
-var traceKey struct{}
-
 func WithValue(err error, key, val string) error {
 	return &contextualError{
 		err: err,

@@ -8,6 +8,8 @@ import (
 	"sync"
 )
 
+var traceKey struct{}
+
 type stackTraceLogger struct {
 	mux sync.Mutex
 	log func(error) string
