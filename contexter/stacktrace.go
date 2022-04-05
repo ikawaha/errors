@@ -19,6 +19,7 @@ var defLogger = stackTraceLogger{
 	log: DefaultLogger,
 }
 
+// SetLogger sets a stack trace logger instead of the DefaultLogger.
 func SetLogger(loggerFn func(error) string) {
 	if loggerFn == nil {
 		return
@@ -28,6 +29,8 @@ func SetLogger(loggerFn func(error) string) {
 	defLogger.log = loggerFn
 }
 
+// DefaultLogger is the default logger for stackTraceLogger that logs
+// the stack trace at this function called.
 func DefaultLogger(err error) string {
 	if err == nil {
 		return ""
@@ -45,6 +48,7 @@ func DefaultLogger(err error) string {
 	return b.String()
 }
 
+// WithStackTrace adds a stack trace to the error.
 func WithStackTrace(err error) error {
 	return &contextualError{
 		err: err,
@@ -53,6 +57,7 @@ func WithStackTrace(err error) error {
 	}
 }
 
+// StackTrace returns the stack trace added to the error.
 func StackTrace(err error) (string, bool) {
 	var b bytes.Buffer
 	find := false

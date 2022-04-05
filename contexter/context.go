@@ -10,14 +10,17 @@ type contextualError struct {
 	val string
 }
 
+// Error implements error interface.
 func (e contextualError) Error() string {
 	return e.err.Error()
 }
 
+// Unwrap implements Wrapper interface.
 func (e contextualError) Unwrap() error {
 	return e.err
 }
 
+// WithValue returns a wrapped error which has a value associated with key.
 func WithValue(err error, key, val string) error {
 	return &contextualError{
 		err: err,
@@ -26,6 +29,8 @@ func WithValue(err error, key, val string) error {
 	}
 }
 
+// Value returns the value associated with the error for key.
+// When no value is associated with key, Value returns false.
 func Value(err error, key string) (string, bool) {
 	return value(err, key)
 }
