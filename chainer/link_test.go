@@ -1,4 +1,4 @@
-package linker
+package chainer
 
 import (
 	"errors"
@@ -8,13 +8,13 @@ import (
 	"testing"
 )
 
-type ErrLinerTest struct{ error }
+type ErrChainerTest struct{ error }
 
-func NewErrLinkerTest(err error) error { return &ErrLinerTest{error: err} }
-func (e ErrLinerTest) Error() string   { return e.error.Error() }
-func (e ErrLinerTest) Unwrap() error   { return e.error }
+func NewErrChainerTest(err error) error { return &ErrChainerTest{error: err} }
+func (e ErrChainerTest) Error() string  { return e.error.Error() }
+func (e ErrChainerTest) Unwrap() error  { return e.error }
 
-func TestLink(t *testing.T) {
+func TestErrChainer(t *testing.T) {
 	t.Run("append: nil, empty", func(t *testing.T) {
 		e := Append(nil)
 		if e != nil {
@@ -28,7 +28,7 @@ func TestLink(t *testing.T) {
 		}
 	})
 	t.Run("append: err, nil", func(t *testing.T) {
-		lhs := NewErrLinkerTest(errors.New("lhs"))
+		lhs := NewErrChainerTest(errors.New("lhs"))
 		e := Append(lhs, nil)
 		if e.Error() != lhs.Error() {
 			t.Errorf("want: %v, got %+v", lhs, e)
@@ -36,13 +36,13 @@ func TestLink(t *testing.T) {
 		if !errors.Is(e, lhs) {
 			t.Error("want: errors.Is(e, lhs)=true, but false")
 		}
-		var target *ErrLinerTest
+		var target *ErrChainerTest
 		if !errors.As(e, &target) {
-			t.Error("want: errors.As(e, ErrLinkerTest)=true, but false")
+			t.Error("want: errors.As(e, ErrChainerTet)=true, but false")
 		}
 	})
 	t.Run("append: nil, err", func(t *testing.T) {
-		rhs := NewErrLinkerTest(errors.New("lhs"))
+		rhs := NewErrChainerTest(errors.New("lhs"))
 		e := Append(nil, rhs)
 		if e.Error() != rhs.Error() {
 			t.Errorf("want: %v, got %+v", rhs, e)
@@ -50,14 +50,14 @@ func TestLink(t *testing.T) {
 		if !errors.Is(e, rhs) {
 			t.Error("want: errors.Is(e, rhs)=true, but false")
 		}
-		var target *ErrLinerTest
+		var target *ErrChainerTest
 		if !errors.As(e, &target) {
-			t.Error("want: errors.As(e, ErrLinkerTest)=true, but false")
+			t.Error("want: errors.As(e, ErrChainerTet)=true, but false")
 		}
 	})
 	t.Run("append: err, err", func(t *testing.T) {
-		lhs := NewErrLinkerTest(errors.New("lhs"))
-		rhs := NewErrLinkerTest(errors.New("rhs"))
+		lhs := NewErrChainerTest(errors.New("lhs"))
+		rhs := NewErrChainerTest(errors.New("rhs"))
 		e := Append(lhs, rhs)
 
 		//fmt.Println("errors.Is(e, lhs)=", errors.Is(e, lhs))
@@ -72,9 +72,9 @@ func TestLink(t *testing.T) {
 		if !errors.Is(e, rhs) {
 			t.Error("want: errors.Is(e, rhs)=true, but false")
 		}
-		var target *ErrLinerTest
+		var target *ErrChainerTest
 		if !errors.As(e, &target) {
-			t.Fatalf("want: errors.As(e, ErrLinkerTest)=true, but false")
+			t.Fatalf("want: errors.As(e, ErrChainerTet)=true, but false")
 		}
 		if got, want := target.Error(), lhs.Error(); got != want {
 			t.Errorf("want: %v, got: %v", want, got)
