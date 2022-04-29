@@ -41,15 +41,15 @@ error caused by fn1:
     /usr/local/opt/go/libexec/src/runtime/asm_amd64.s:1571 runtime.goexit
 ```
 
-## linker
+## chainer
 
-The linker allows multiple errors to be linked (embedded) together and treated as a single error. It can also expand linked errors back into multiple errors.
+The chainer allows multiple errors to be chained (embedded) together and treated as a single error. It can also expand chained errors back into multiple errors.
 
 Linking errors:
 ```
 lhs := errors.New("lhs")
 rhs := errors.New("rhs")
-e := linker.Append(lhs, rhs)
+e := chainer.Append(lhs, rhs)
 
 fmt.Println("errors.Is(e, lhs)=", errors.Is(e, lhs))
 fmt.Println("errors.Is(e, rhs)=", errors.Is(e, rhs))
@@ -60,10 +60,10 @@ errors.Is(e, rhs)= true
 
 Yield multiple errors:
 ```
-errs := linker.Yield(e)
-fmt.Println("linker.Yield(e)=", errs)
+errs := chainer.Yield(e)
+fmt.Println("chainer.Yield(e)=", errs)
 OUTPUT:
-linker.Yield(e)== [lhs rhs]
+chainer.Yield(e)== [lhs rhs]
 ```
 
 ---

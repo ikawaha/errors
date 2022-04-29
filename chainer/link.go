@@ -1,56 +1,61 @@
-package linker
+package chainer
 
 import (
 	"errors"
 )
 
-type errLinker struct {
+type errChainer struct {
 	err  error
 	next error
 }
 
-func newErrLinker(err error) error {
+func newErrChainer(err error) error {
 	if err == nil {
 		return nil
 	}
-	if errors.As(err, &errLinker{}) {
+	if errors.As(err, &errChainer{}) {
 		return err
 	}
-	return &errLinker{err: err}
+	return &errChainer{err: err}
 }
 
 // Error implements error interface.
-func (e errLinker) Error() string {
+func (e errChainer) Error() string {
 	return e.err.Error()
 }
 
 // Is reports whether any error in err's chain matches target.
-func (e errLinker) Is(err error) bool {
+func (e errChainer) Is(err error) bool {
 	return errors.Is(e.err, err)
 }
 
+// As reports whether any error in err's chain matches target type.
+func (e errChainer) As(target interface{}) bool {
+	return errors.As(e.err, target)
+}
+
 // Unwrap implements Wrapper interface.
-func (e errLinker) Unwrap() error {
+func (e errChainer) Unwrap() error {
 	return e.next
 }
 
 // Append appends errors and obtains chained errors.
 func Append(lhs error, rhs ...error) error {
 	if len(rhs) == 0 || rhs[0] == nil {
-		return newErrLinker(lhs)
+		return newErrChainer(lhs)
 	}
 	if lhs == nil {
 		return Append(rhs[0], rhs[1:]...)
 	}
 	if len(rhs) == 1 {
-		return &errLinker{err: lhs, next: newErrLinker(rhs[0])}
+		return &errChainer{err: lhs, next: newErrChainer(rhs[0])}
 	}
 	return Append(lhs, Append(rhs[0], rhs[1:]...))
 }
 
-// Yield yields a list of errors from the linked error.
+// Yield yields a list of errors from the chained error.
 func Yield(err error) []error {
-	var el *errLinker
+	var el *errChainer
 	if !errors.As(err, &el) {
 		return nil
 	}
@@ -58,7 +63,7 @@ func Yield(err error) []error {
 }
 
 func yield(err error) []error {
-	var el *errLinker
+	var el *errChainer
 	if !errors.As(err, &el) {
 		return []error{err}
 	}
