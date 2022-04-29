@@ -29,6 +29,11 @@ func (e errLinker) Is(err error) bool {
 	return errors.Is(e.err, err)
 }
 
+// As reports whether any error in err's chain matches target type.
+func (e errLinker) As(target interface{}) bool {
+	return errors.As(e.err, target)
+}
+
 // Unwrap implements Wrapper interface.
 func (e errLinker) Unwrap() error {
 	return e.next
