@@ -17,29 +17,39 @@ func fn2() error {
 }
 
 func TestWithStackTrace(t *testing.T) {
-	contexter.SetLogger(func(err error) string {
-		return err.Error()
-	})
-	defer contexter.SetLogger(contexter.DefaultLogger)
-
-	err := fn2()
-	if err == nil {
-		t.Fatal("expected error, but nil")
-	}
 	t.Run("wrapped error", func(t *testing.T) {
+		err := fn2()
+		if err == nil {
+			t.Fatal("expected error, but nil")
+		}
 		want := "fn2 has error: error caused by fn1"
 		if got := err.Error(); want != err.Error() {
 			t.Errorf("want: %v, got: %v", want, got)
 		}
+		t.Run("frame trace", func(t *testing.T) {
+			got := contexter.StackFrames(err)
+			want := 1
+			if len(got) != want {
+				t.Errorf("want: len=%d, got: len=%d, %+v", want, len(got), got)
+			}
+		})
 	})
-	t.Run("stack trace", func(t *testing.T) {
-		got, ok := contexter.StackTrace(err)
-		if !ok {
-			t.Errorf("expected true, but false")
+
+	t.Run("wrapped wrapped error", func(t *testing.T) {
+		err := contexter.WithStackTrace(fn2())
+		if err == nil {
+			t.Fatal("expected error, but nil")
 		}
-		want := "error caused by fn1"
-		if got != want {
-			t.Errorf("want: %q, got: %q", got, want)
+		want := "fn2 has error: error caused by fn1"
+		if got := err.Error(); want != err.Error() {
+			t.Errorf("want: %v, got: %v", want, got)
 		}
+		t.Run("frame trace", func(t *testing.T) {
+			got := contexter.StackFrames(err)
+			want := 2
+			if len(got) != want {
+				t.Errorf("want: len=%d, got: len=%d, %q", want, len(got), got)
+			}
+		})
 	})
 }

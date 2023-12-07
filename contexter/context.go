@@ -6,8 +6,8 @@ import (
 
 type contextualError struct {
 	err error
-	key interface{}
-	val string
+	key any
+	val any
 }
 
 // Error implements error interface.
@@ -35,13 +35,15 @@ func Value(err error, key string) (string, bool) {
 	return value(err, key)
 }
 
-func value(err error, key interface{}) (string, bool) {
+func value(err error, key any) (string, bool) {
 	var ctxErr *contextualError
 	if !errors.As(err, &ctxErr) {
 		return "", false
 	}
 	if ctxErr.key == key {
-		return ctxErr.val, true
+		v, ok := ctxErr.val.(string)
+		return v, ok
+
 	}
 	return value(ctxErr.err, key)
 }
