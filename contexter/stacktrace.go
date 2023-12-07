@@ -5,72 +5,84 @@ import (
 	"errors"
 	"fmt"
 	"runtime"
-	"sync"
+	"slices"
 )
 
-var traceKey struct{}
+type Frame []uintptr
 
-type stackTraceLogger struct {
-	mux sync.Mutex
-	log func(error) string
-}
-
-var defLogger = stackTraceLogger{
-	log: DefaultLogger,
-}
-
-// SetLogger sets a stack trace logger instead of the DefaultLogger.
-func SetLogger(loggerFn func(error) string) {
-	if loggerFn == nil {
-		return
-	}
-	defLogger.mux.Lock()
-	defer defLogger.mux.Unlock()
-	defLogger.log = loggerFn
-}
-
-// DefaultLogger is the default logger for stackTraceLogger that logs
-// the stack trace at this function called.
-func DefaultLogger(err error) string {
-	if err == nil {
-		return ""
-	}
-	b := bytes.NewBufferString(err.Error())
-	b.WriteString(":\n")
-	for skip := 2; skip < 7; skip++ {
-		pc, file, line, ok := runtime.Caller(skip)
-		if !ok {
-			break
+func (s *Frame) String() string {
+	var b bytes.Buffer
+	frames := runtime.CallersFrames(*s)
+	for fr, ok := frames.Next(); ok; fr, ok = frames.Next() {
+		if b.Len() > 0 {
+			b.WriteString("\n")
 		}
-		fn := runtime.FuncForPC(pc).Name()
-		fmt.Fprintf(b, "    %s:%d %s\n", file, line, fn)
+		b.WriteString(fmt.Sprintf("%s\n\t%s:%d", fr.Function, fr.File, fr.Line))
 	}
 	return b.String()
 }
 
-// WithStackTrace adds a stack trace to the error.
+func defaultStackTracer(err error) Frame {
+	if err == nil {
+		return nil
+	}
+	const depth = 8
+	var pcs [depth]uintptr
+	n := runtime.Callers(3, pcs[:])
+	return pcs[:n]
+}
+
+type traceKey struct{}
+
+// WithStackTrace adds a Frame trace to the error.
 func WithStackTrace(err error) error {
+	if err == nil {
+		return err
+	}
 	return &contextualError{
 		err: err,
-		key: traceKey,
-		val: defLogger.log(err),
+		key: traceKey{},
+		val: defaultStackTracer(err),
 	}
 }
 
-// StackTrace returns the stack trace added to the error.
-func StackTrace(err error) (string, bool) {
-	var b bytes.Buffer
+func StackFrames(err error) []Frame {
 	find := false
+	var frames []Frame
 	for {
 		var ctxErr *contextualError
 		if !errors.As(err, &ctxErr) {
 			break
 		}
-		if ctxErr.key == traceKey {
+		if ctxErr.key == any(traceKey{}) {
+			v, ok := ctxErr.val.(Frame)
+			if !ok {
+				continue
+			}
 			find = true
-			b.WriteString(ctxErr.val)
+			frames = append(frames, v)
 		}
 		err = ctxErr.err
 	}
-	return b.String(), find
+	if !find {
+		return nil
+	}
+	return frames
+}
+
+// StackTrace returns the Frame trace added to the error.
+func StackTrace(err error) string {
+	frames := StackFrames(err)
+	if frames == nil {
+		return ""
+	}
+	var b bytes.Buffer
+	slices.Reverse(frames)
+	for i := range frames {
+		if i != 0 {
+			b.WriteString("\n")
+		}
+		b.WriteString(frames[i].String())
+	}
+	return b.String()
 }
