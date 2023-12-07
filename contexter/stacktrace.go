@@ -37,7 +37,7 @@ type traceKey struct{}
 // WithStackTrace adds a Frame trace to the error.
 func WithStackTrace(err error) error {
 	if err == nil {
-		return err
+		return nil
 	}
 	return &contextualError{
 		err: err,
