@@ -11,17 +11,13 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v4
       - name: Set up Go 1.x
         uses: actions/setup-go@v4
         with:
-          go-version-file: 'go.mod'
+          go-version-file: go.mod
           cache: true
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v3
-        with:
-          path: src/github.com/ikawaha/errors
       - name: Test
         run: |
           go test -v ./...
-        working-directory: src/github.com/ikawaha/errors
-
