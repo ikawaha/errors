@@ -26,17 +26,11 @@ func TestWithStackTrace(t *testing.T) {
 		if got := err.Error(); want != err.Error() {
 			t.Errorf("want: %v, got: %v", want, got)
 		}
-		t.Run("Frame trace", func(t *testing.T) {
-			got := contexter.StackTrace(err)
-			want := "github.com/ikawaha/errors/contexter_test.fn1\n" +
-				"\t/Users/ikawaha/go/src/github.com/ikawaha/errors/contexter/stacktrace_test.go:12\n" +
-				"github.com/ikawaha/errors/contexter_test.fn2\n" +
-				"\t/Users/ikawaha/go/src/github.com/ikawaha/errors/contexter/stacktrace_test.go:16\n" +
-				"github.com/ikawaha/errors/contexter_test.TestWithStackTrace.func1\n" +
-				"\t/Users/ikawaha/go/src/github.com/ikawaha/errors/contexter/stacktrace_test.go:21\n" +
-				"testing.tRunner\n\t/opt/homebrew/opt/go/libexec/src/testing/testing.go:1595"
-			if got != want {
-				t.Errorf("want: %q, got: %q", want, got)
+		t.Run("frame trace", func(t *testing.T) {
+			got := contexter.StackFrames(err)
+			want := 1
+			if len(got) != want {
+				t.Errorf("want: len=%d, got: len=%d, %+v", want, len(got), got)
 			}
 		})
 	})
@@ -50,14 +44,11 @@ func TestWithStackTrace(t *testing.T) {
 		if got := err.Error(); want != err.Error() {
 			t.Errorf("want: %v, got: %v", want, got)
 		}
-		t.Run("Frame trace", func(t *testing.T) {
-			got := contexter.StackTrace(err)
-			// Frame trace is reverse order
-			want := "error caused by fn1" +
-				"\n" + "fn2 has error: error caused by fn1"
-			if got != want {
-				t.Errorf("want: %q, got: %q", want, got)
-				fmt.Println(got)
+		t.Run("frame trace", func(t *testing.T) {
+			got := contexter.StackFrames(err)
+			want := 2
+			if len(got) != want {
+				t.Errorf("want: len=%d, got: len=%d, %q", want, len(got), got)
 			}
 		})
 	})
