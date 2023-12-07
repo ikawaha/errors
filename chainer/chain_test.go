@@ -1,204 +1,78 @@
-package chainer
+package chainer_test
 
 import (
 	"errors"
-	"fmt"
 	"reflect"
-	"strconv"
 	"testing"
+
+	"github.com/ikawaha/errors/chainer"
 )
 
-type ErrChainerTest struct{ error }
-
-func NewErrChainerTest(err error) error { return &ErrChainerTest{error: err} }
-func (e ErrChainerTest) Error() string  { return e.error.Error() }
-func (e ErrChainerTest) Unwrap() error  { return e.error }
-
-func TestErrChainer(t *testing.T) {
-	t.Run("append: nil, empty", func(t *testing.T) {
-		e := Append(nil)
-		if e != nil {
-			t.Errorf("want nil, but %+v", e)
+func TestChain(t *testing.T) {
+	t.Run("empty", func(t *testing.T) {
+		if err := chainer.Chain(); err != nil {
+			t.Errorf("chainer.Chain() = %v, want nil", err)
 		}
 	})
-	t.Run("append: nil, nil", func(t *testing.T) {
-		e := Append(nil, nil)
-		if e != nil {
-			t.Errorf("want nil, but %+v", e)
+	t.Run("nils", func(t *testing.T) {
+		if err := chainer.Chain(nil); err != nil {
+			t.Errorf("chainer.Chain(nil) = %v, want nil", err)
+		}
+		if err := chainer.Chain(nil, nil); err != nil {
+			t.Errorf("chainer.Chain(nil, nil) = %v, want nil", err)
 		}
 	})
-	t.Run("append: err, nil", func(t *testing.T) {
-		lhs := NewErrChainerTest(errors.New("lhs"))
-		e := Append(lhs, nil)
-		if e.Error() != lhs.Error() {
-			t.Errorf("want: %v, got %+v", lhs, e)
-		}
-		if !errors.Is(e, lhs) {
-			t.Error("want: errors.Is(e, lhs)=true, but false")
-		}
-		var target *ErrChainerTest
-		if !errors.As(e, &target) {
-			t.Error("want: errors.As(e, ErrChainerTet)=true, but false")
-		}
-	})
-	t.Run("append: nil, err", func(t *testing.T) {
-		rhs := NewErrChainerTest(errors.New("lhs"))
-		e := Append(nil, rhs)
-		if e.Error() != rhs.Error() {
-			t.Errorf("want: %v, got %+v", rhs, e)
-		}
-		if !errors.Is(e, rhs) {
-			t.Error("want: errors.Is(e, rhs)=true, but false")
-		}
-		var target *ErrChainerTest
-		if !errors.As(e, &target) {
-			t.Error("want: errors.As(e, ErrChainerTet)=true, but false")
-		}
-	})
-	t.Run("append: err, err", func(t *testing.T) {
-		lhs := NewErrChainerTest(errors.New("lhs"))
-		rhs := NewErrChainerTest(errors.New("rhs"))
-		e := Append(lhs, rhs)
-
-		//fmt.Println("errors.Is(e, lhs)=", errors.Is(e, lhs))
-		//fmt.Println("errors.Is(e, rhs)=", errors.Is(e, rhs))
-		//fmt.Println("yield errors=", Yield(e))
-		if e.Error() != lhs.Error() {
-			t.Errorf("want: %v, got %+v", lhs, e)
-		}
-		if !errors.Is(e, lhs) {
-			t.Error("want: errors.Is(e, lhs)=true, but false")
-		}
-		if !errors.Is(e, rhs) {
-			t.Error("want: errors.Is(e, rhs)=true, but false")
-		}
-		var target *ErrChainerTest
-		if !errors.As(e, &target) {
-			t.Fatalf("want: errors.As(e, ErrChainerTet)=true, but false")
-		}
-		if got, want := target.Error(), lhs.Error(); got != want {
-			t.Errorf("want: %v, got: %v", want, got)
-		}
-	})
-	t.Run("append: err, err list", func(t *testing.T) {
-		lhs := errors.New("lhs")
-		var rhs []error
-		for i := 0; i < 10; i++ {
-			rhs = append(rhs, errors.New("rhs_"+strconv.Itoa(i)))
-		}
-		e := Append(lhs, rhs...)
-		if e.Error() != lhs.Error() {
-			t.Errorf("want: %v, got %+v", lhs, e)
-		}
-		if !errors.Is(e, lhs) {
-			t.Errorf("want: errors.Is(e, lhs)=true, but false")
-		}
-		for i := 0; i < 10; i++ {
-			if !errors.Is(e, rhs[i]) {
-				t.Errorf("want: errors.Is(e, rhs[%d])=true, but false", i)
+	err1 := errors.New("err1")
+	err2 := errors.New("err2")
+	tests := []struct {
+		name   string
+		input  []error
+		error  string
+		unwrap []error
+	}{
+		{name: "[err1]", input: []error{err1}, error: err1.Error(), unwrap: []error{err1}},
+		{name: "[err1, err2]", input: []error{err1, err2}, error: err1.Error(), unwrap: []error{err1, err2}},
+		{name: "[err1, nil, err2]", input: []error{err1, nil, err2}, error: err1.Error(), unwrap: []error{err1, err2}},
+		{name: "[nil, err1, nil, err2, nil]", input: []error{nil, err1, nil, err2, nil}, error: err1.Error(), unwrap: []error{err1, err2}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := chainer.Chain(tt.input...)
+			if got := err.Error(); tt.error != got {
+				t.Errorf("want: %q, got: %q", tt.error, got)
 			}
-		}
-	})
-	t.Run("append: nil, err list", func(t *testing.T) {
-		var rhs []error
-		for i := 0; i < 10; i++ {
-			rhs = append(rhs, errors.New("rhs_"+strconv.Itoa(i)))
-		}
-		e := Append(nil, rhs...)
-		if e.Error() != rhs[0].Error() {
-			t.Errorf("want: %v, got %+v", rhs[0], e)
-		}
-		for i := 0; i < 10; i++ {
-			if !errors.Is(e, rhs[i]) {
-				t.Errorf("want: errors.Is(e, rhs[%d])=true, but false", i)
+			v, ok := err.(interface{ Unwrap() []error })
+			if !ok {
+				t.Fatal("expected implement Unwrap() []error interface, but not")
 			}
-		}
-	})
+			if got := v.Unwrap(); !reflect.DeepEqual(got, tt.unwrap) {
+				t.Errorf("want: %+v, got: %+v", tt.unwrap, got)
+			}
+		})
+	}
 }
 
-func TestYield(t *testing.T) {
-	t.Run("yield: append[nil]", func(t *testing.T) {
-		e := Append(nil)
-		got := Yield(e)
-		if got != nil {
-			t.Errorf("want: nil, got: %v", got)
-		}
-	})
-	t.Run("yield: append[nil, nil]", func(t *testing.T) {
-		e := Append(nil, nil)
-		got := Yield(e)
-		if got != nil {
-			t.Errorf("want: nil, got: %v", got)
-		}
-	})
-	t.Run("yield: append[err, nil]", func(t *testing.T) {
-		lhs := errors.New("lhs")
-		e := Append(lhs, nil)
-		got := Yield(e)
-		want := []error{lhs}
-		if !reflect.DeepEqual(got, want) {
-			t.Errorf("want: %+v, got: %+v", want, got)
-		}
-	})
-	t.Run("yield: append[err, err]", func(t *testing.T) {
-		lhs := errors.New("lhs")
-		rhs := errors.New("rhs")
-		e := Append(lhs, rhs)
-		got := Yield(e)
-		want := []error{lhs, rhs}
-		if !reflect.DeepEqual(got, want) {
-			t.Errorf("want: %+v, got: %+v", want, got)
-		}
-	})
-	t.Run("yield: append[err, err list]", func(t *testing.T) {
-		lhs := errors.New("lhs")
-		var rhs []error
-		for i := 0; i < 10; i++ {
-			rhs = append(rhs, errors.New("rhs_"+strconv.Itoa(i)))
-		}
-		e := Append(lhs, rhs...)
-		got := Yield(e)
-		want := append([]error{lhs}, rhs...)
-		if !reflect.DeepEqual(got, want) {
-			t.Errorf("want: %+v, got: %+v", want, got)
-		}
-	})
-	t.Run("yield: append[append[err_list], append[err_list]]", func(t *testing.T) {
-		var lhs []error
-		for i := 0; i < 10; i++ {
-			lhs = append(lhs, errors.New("lhs_"+strconv.Itoa(i)))
-		}
-		var rhs []error
-		for i := 0; i < 10; i++ {
-			rhs = append(rhs, errors.New("rhs_"+strconv.Itoa(i)))
-		}
-		e := Append(Append(lhs[0], lhs[1:]...), Append(rhs[0], rhs[1:]...))
-		got := Yield(e)
-		want := append(lhs, rhs...)
-		if !reflect.DeepEqual(got, want) {
-			t.Errorf("want: %+v, got: %+v", want, got)
-		}
-	})
-	t.Run("yield: embedding", func(t *testing.T) {
-		var lhs, want []error
-		for i := 0; i < 3; i++ {
-			var es []error
-			for j := 0; j < 3; j++ {
-				es = append(es, fmt.Errorf("lhs%d_%d", i, j))
+func Test_Is(t *testing.T) {
+	err1 := errors.New("err1")
+	err2 := errors.New("err2")
+	err3 := errors.New("err3")
+	tests := []struct {
+		name   string
+		errs   []error
+		target error
+		want   bool
+	}{
+		{name: "Is([err1, err2], err1)", errs: []error{err1, err2}, target: err1, want: true},
+		{name: "Is([err1, err2], err2)", errs: []error{err1, err2}, target: err2, want: true},
+		{name: "Is([err1, err2], err3)", errs: []error{err1, err2}, target: err3, want: false},
+		{name: "Is([err1, [err2, err3]], err3)", errs: []error{err1, chainer.Chain(err2, err3)}, target: err3, want: true},
+		{name: "Is([err1, err2], err3], err3)", errs: []error{chainer.Chain(err1, err2), err3}, target: err3, want: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := errors.Is(chainer.Chain(tt.errs...), tt.target); got != tt.want {
+				t.Errorf("expected %t, but %t", tt.want, got)
 			}
-			lhs = append(lhs, Append(es[0], es[1:]...))
-			want = append(want, es...)
-		}
-		var rhs []error
-		for i := 0; i < 3; i++ {
-			rhs = append(rhs, errors.New("rhs_"+strconv.Itoa(i)))
-		}
-		want = append(want, rhs...)
-
-		e := Append(Append(lhs[0], lhs[1:]...), Append(rhs[0], rhs[1:]...))
-		got := Yield(e)
-		if !reflect.DeepEqual(got, want) {
-			t.Errorf("want: %+v, got: %+v", want, got)
-		}
-	})
+		})
+	}
 }
