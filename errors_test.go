@@ -37,9 +37,7 @@ func TestNew(t *testing.T) {
 }
 
 func Test_Is(t *testing.T) {
-	var (
-		err0 = errors.New("error0")
-	)
+	err0 := errors.New("error0")
 	tests := []struct {
 		name   string
 		err    error

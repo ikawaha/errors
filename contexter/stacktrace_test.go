@@ -52,5 +52,4 @@ func TestWithStackTrace(t *testing.T) {
 			}
 		})
 	})
-
 }
