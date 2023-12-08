@@ -6,23 +6,22 @@ import (
 	"github.com/ikawaha/errors"
 )
 
-func TestChain(t *testing.T) {
+func TestNewWithErrors(t *testing.T) {
 	tests := []struct {
 		name    string
-		head    error
+		head    string
 		tails   []error
 		want    bool
 		wantErr string
 	}{
-		{name: "empty", head: nil, tails: nil, want: false},
-		{name: "head", head: errors.New("head"), tails: []error{errors.New("t0"), errors.New("t1"), errors.New("t2")}, want: true, wantErr: "head"},
-		{name: "head is nil, tail has some error", head: nil, tails: []error{nil, errors.New("t0"), errors.New("t1"), errors.New("t2")}, want: true, wantErr: "t0"},
+		{name: "head", head: "head", tails: []error{errors.New("t0"), errors.New("t1"), errors.New("t2")}, want: true, wantErr: "head"},
+		{name: "tail has some error including nil", head: "head", tails: []error{nil, errors.New("t0"), errors.New("t1"), errors.New("t2")}, want: true, wantErr: "head"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := errors.Chain(append([]error{tt.head}, tt.tails...)...)
+			err := errors.NewWithErrors(tt.head, tt.tails...)
 			if (err != nil) != tt.want {
-				t.Fatalf("Chain() error = %v, want not nil", err)
+				t.Fatalf("NewWithErrors() error = %v, want not nil", err)
 			}
 			if tt.want {
 				if got := err.Error(); tt.wantErr != got {

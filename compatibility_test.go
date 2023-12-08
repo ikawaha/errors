@@ -28,10 +28,10 @@ func TestAs(t *testing.T) {
 		{name: "new: not found", err: errors.New("error"), want: false},
 		{name: "found (embedded by errorf)", err: errors.Errorf("caused by %w", err0), want: true},
 		{name: "found (embedded by wrapper)", err: errors.Wrap(err0, "caused by"), want: true},
-		{name: "found (chained: head)", err: errors.Chain(err0, errors.New("tails")), want: true},
-		{name: "found (chained: tail)", err: errors.Chain(errors.New("head"), errors.New("tail1"), err0), want: true},
-		{name: "found (chained: middle)", err: errors.Chain(errors.New("head"), errors.New("tail1"), err0, errors.New("tail2")), want: true},
-		{name: "found (chained: [[err, err, err0], MyErr])", err: errors.Chain(errors.Chain(errors.New("head"), errors.New("tail1"), err0), &asTestError{msg: "tail2"}), want: true},
+		{name: "found (chained: top)", err: errors.NewWithErrors("head", err0, errors.New("tails")), want: true},
+		{name: "found (chained: tail)", err: errors.NewWithErrors("head", errors.New("tail1"), err0), want: true},
+		{name: "found (chained: middle)", err: errors.NewWithErrors("head", errors.New("tail1"), err0, errors.New("tail2")), want: true},
+		{name: "found (chained: [[err, err, err0], MyErr])", err: errors.NewWithErrors("head0", errors.NewWithErrors("head1", errors.New("tail0"), errors.New("tail1"), err0), &asTestError{msg: "tail2"}), want: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -71,9 +71,9 @@ func TestIs(t *testing.T) {
 		{name: "new: not equal", err: errors.New("error"), target: errors.New("error"), want: false},
 		{name: "equal (embedded by errorf)", err: errors.Errorf("caused by %w", err0), target: err0, want: true},
 		{name: "equal (embedded by wrapper)", err: errors.Wrap(err0, "caused by"), target: err0, want: true},
-		{name: "equal (chained: head)", err: errors.Chain(err0, errors.New("tails")), target: err0, want: true},
-		{name: "equal (chained: tail)", err: errors.Chain(errors.New("head"), errors.New("tail1"), err0), target: err0, want: true},
-		{name: "equal (chained: middle)", err: errors.Chain(errors.New("head"), errors.New("tail1"), err0, errors.New("tail2")), target: err0, want: true},
+		{name: "equal (chained: head)", err: errors.NewWithErrors("top", err0, errors.New("tails")), target: err0, want: true},
+		{name: "equal (chained: tail)", err: errors.NewWithErrors("top", errors.New("head"), errors.New("tail1"), err0), target: err0, want: true},
+		{name: "equal (chained: middle)", err: errors.NewWithErrors("top", errors.New("head"), errors.New("tail1"), err0, errors.New("tail2")), target: err0, want: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -134,7 +134,7 @@ func TestUnwrap(t *testing.T) {
 		{name: "wrapped by wrap", err: errors.Wrap(err0, "wrapped"), want: err0},
 		{name: "wrapped by errorf", err: errors.Errorf("caused by %w", err0), want: err0},
 		{name: "wrapped by fmt errorf", err: fmt.Errorf("caused by %w", err0), want: err0},
-		{name: "chain", err: errors.Chain(err0), want: nil},
+		{name: "chain", err: errors.NewWithErrors("head", err0), want: nil},
 		{name: "join", err: errors.Join(err0), want: nil},
 	}
 	for _, tt := range tests {
