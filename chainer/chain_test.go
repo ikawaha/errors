@@ -41,7 +41,7 @@ func TestChain(t *testing.T) {
 			if got := err.Error(); tt.error != got {
 				t.Errorf("want: %q, got: %q", tt.error, got)
 			}
-			v, ok := err.(interface{ Unwrap() []error })
+			v, ok := err.(interface{ Unwrap() []error }) //nolint:errorlint
 			if !ok {
 				t.Fatal("expected implement Unwrap() []error interface, but not")
 			}
