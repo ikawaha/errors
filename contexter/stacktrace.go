@@ -22,27 +22,29 @@ func (s *Frame) String() string {
 	return b.String()
 }
 
-func defaultStackTracer(err error) Frame {
+func defaultStackTracer(err error, skip int) Frame {
 	if err == nil {
 		return nil
 	}
 	const depth = 8
 	var pcs [depth]uintptr
-	n := runtime.Callers(3, pcs[:])
+	n := runtime.Callers(3+skip, pcs[:])
 	return pcs[:n]
 }
 
 type traceKey struct{}
 
-// WithStackTrace adds a Frame trace to the error.
-func WithStackTrace(err error) error {
+// WithStacktrace adds a frame trace to the error.
+// The skip specifies the number of frames to skip when getting the stack trace.
+// Specify 0 when using it directly.
+func WithStacktrace(err error, skip int) error {
 	if err == nil {
 		return nil
 	}
 	return &contextualError{
 		err: err,
 		key: traceKey{},
-		val: defaultStackTracer(err),
+		val: defaultStackTracer(err, skip),
 	}
 }
 
