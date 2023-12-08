@@ -17,7 +17,7 @@ func (e contextualError) Error() string {
 
 // Unwrap implements Wrapper interface.
 func (e contextualError) Unwrap() error {
-	return e.err
+	return errors.Unwrap(e.err)
 }
 
 // WithValue returns a wrapped error which has a value associated with key.
