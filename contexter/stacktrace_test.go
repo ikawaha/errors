@@ -9,7 +9,7 @@ import (
 )
 
 func fn1() error {
-	return contexter.WithStackTrace(errors.New("error caused by fn1"))
+	return contexter.WithStacktrace(errors.New("error caused by fn1"), 0)
 }
 
 func fn2() error {
@@ -36,7 +36,7 @@ func TestWithStackTrace(t *testing.T) {
 	})
 
 	t.Run("wrapped wrapped error", func(t *testing.T) {
-		err := contexter.WithStackTrace(fn2())
+		err := contexter.WithStacktrace(fn2(), 0)
 		if err == nil {
 			t.Fatal("expected error, but nil")
 		}
