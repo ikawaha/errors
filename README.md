@@ -1,13 +1,13 @@
 errors
 ===
 
-The errors package is a libraries that adds context to errors.
+The errors package is an error handling library compatible with the standard Go errors package.It enables recording of stack traces during error handling and conceals error details that need not be shown to the user, without losing any error information.
 
-## contexter
+```go
 
-The contexter adds key/value context and stack traces to the error.
 
-## chainer
+
+```
 
 
 ---
