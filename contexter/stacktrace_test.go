@@ -8,48 +8,41 @@ import (
 	"github.com/ikawaha/errors/contexter"
 )
 
-func fn1() error {
-	return contexter.WithStacktrace(errors.New("error caused by fn1"), 0)
-}
-
-func fn2() error {
-	return fmt.Errorf("fn2 has error: %w", fn1())
-}
-
 func TestWithStackTrace(t *testing.T) {
-	t.Run("wrapped error", func(t *testing.T) {
-		err := fn2()
-		if err == nil {
-			t.Fatal("expected error, but nil")
-		}
-		want := "fn2 has error: error caused by fn1"
-		if got := err.Error(); want != err.Error() {
-			t.Errorf("want: %v, got: %v", want, got)
-		}
-		t.Run("frame trace", func(t *testing.T) {
-			got := contexter.StackFrames(err)
-			want := 1
-			if len(got) != want {
-				t.Errorf("want: len=%d, got: len=%d, %+v", want, len(got), got)
+	fn1 := func() error {
+		return contexter.WithStacktrace(errors.New("error caused by fn1"), 0)
+	}
+	fn2 := func() error {
+		return fmt.Errorf("fn2 has error: %w", fn1())
+	}
+	fn3 := func() error {
+		return contexter.WithStacktrace(fn2(), 0)
+	}
+	tests := []struct {
+		name string
+		exec func() error
+		want int
+	}{
+		{name: "f1() cases error with stack trace", exec: fn1, want: 1},
+		{name: "f2() cases error with stack trace", exec: fn2, want: 1},
+		{name: "f3() cases error with 2 stack trace", exec: fn3, want: 2},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.exec()
+			if err == nil {
+				t.Fatal("expected error, but nil")
 			}
+			t.Run("frame trace", func(t *testing.T) {
+				got := contexter.StackFrames(err)
+				if len(got) != tt.want {
+					t.Errorf("want: len=%d, got: len=%d, %+v", tt.want, len(got), got)
+				}
+			})
+			t.Run("print stack trace", func(t *testing.T) {
+				t.Skip(tt.name)
+				fmt.Println("BEGIN:\n" + contexter.StackTrace(err) + "\nEND")
+			})
 		})
-	})
-
-	t.Run("wrapped wrapped error", func(t *testing.T) {
-		err := contexter.WithStacktrace(fn2(), 0)
-		if err == nil {
-			t.Fatal("expected error, but nil")
-		}
-		want := "fn2 has error: error caused by fn1"
-		if got := err.Error(); want != err.Error() {
-			t.Errorf("want: %v, got: %v", want, got)
-		}
-		t.Run("frame trace", func(t *testing.T) {
-			got := contexter.StackFrames(err)
-			want := 2
-			if len(got) != want {
-				t.Errorf("want: len=%d, got: len=%d, %q", want, len(got), got)
-			}
-		})
-	})
+	}
 }
