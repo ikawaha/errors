@@ -8,8 +8,10 @@ import (
 	"github.com/ikawaha/errors/contexter"
 )
 
+// Frame represents a stack frame.
 type Frame []uintptr
 
+// String returns a string representation of the frame.
 func (s *Frame) String() string {
 	var b bytes.Buffer
 	frames := runtime.CallersFrames(*s)
@@ -50,6 +52,7 @@ func WithStacktrace(err error) error {
 	return WithStacktraceSkip(err, 1)
 }
 
+// StackFrames returns the frame trace added to the error.
 func StackFrames(err error) []Frame {
 	v, ok := contexter.Value(err, traceKey{})
 	if !ok {
