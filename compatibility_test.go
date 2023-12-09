@@ -134,7 +134,7 @@ func TestUnwrap(t *testing.T) {
 		{name: "wrapped by wrap", err: errors.Wrap(err0, "wrapped"), want: err0},
 		{name: "wrapped by errorf", err: errors.Errorf("caused by %w", err0), want: err0},
 		{name: "wrapped by fmt errorf", err: fmt.Errorf("caused by %w", err0), want: err0},
-		{name: "chain", err: errors.NewWithErrors("head", err0), want: nil},
+		{name: "chain", err: errors.NewWithErrors("head", err0), want: err0},
 		{name: "join", err: errors.Join(err0), want: nil},
 	}
 	for _, tt := range tests {

@@ -1,35 +1,59 @@
 package chainer
 
+import (
+	stderrs "errors"
+)
+
 type errChain struct {
-	errs []error
+	err  error
+	next *errChain
 }
 
 // Chain chains non-nil errors and obtains chained errors.
 func Chain(errs ...error) error {
-	n := 0
-	for _, v := range errs {
+	top := -1
+	for i, v := range errs {
 		if v != nil {
-			n++
+			top = i
+			break
 		}
 	}
-	if n == 0 {
+	if top < 0 {
 		return nil
 	}
-	es := make([]error, 0, n)
-	for _, v := range errs {
-		if v != nil {
-			es = append(es, v)
-		}
+	head := &errChain{
+		err: errs[top],
 	}
-	return &errChain{errs: es}
+	p := head
+	for i := top + 1; i < len(errs); i++ {
+		if errs[i] == nil {
+			continue
+		}
+		p.next = &errChain{
+			err: errs[i],
+		}
+		p = p.next
+	}
+	return head
 }
 
 // Error returns the head of the error chain.
 func (e *errChain) Error() string {
-	return e.errs[0].Error()
+	return e.err.Error()
 }
 
 // Unwrap implements Wrapper interface.
-func (e *errChain) Unwrap() []error {
-	return e.errs
+func (e *errChain) Unwrap() error {
+	if e.next == nil {
+		return nil // untyped error
+	}
+	return e.next
+}
+
+func (e *errChain) Is(target error) bool {
+	return stderrs.Is(e.err, target)
+}
+
+func (e *errChain) As(target any) bool {
+	return stderrs.As(e.err, target)
 }
