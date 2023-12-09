@@ -2,7 +2,6 @@ package chainer_test
 
 import (
 	"errors"
-	"reflect"
 	"testing"
 
 	"github.com/ikawaha/errors/chainer"
@@ -27,26 +26,22 @@ func TestChain(t *testing.T) {
 	tests := []struct {
 		name   string
 		input  []error
-		error  string
-		unwrap []error
+		error  error
+		unwrap error
 	}{
-		{name: "[err1]", input: []error{err1}, error: err1.Error(), unwrap: []error{err1}},
-		{name: "[err1, err2]", input: []error{err1, err2}, error: err1.Error(), unwrap: []error{err1, err2}},
-		{name: "[err1, nil, err2]", input: []error{err1, nil, err2}, error: err1.Error(), unwrap: []error{err1, err2}},
-		{name: "[nil, err1, nil, err2, nil]", input: []error{nil, err1, nil, err2, nil}, error: err1.Error(), unwrap: []error{err1, err2}},
+		{name: "[err1]", input: []error{err1}, error: err1, unwrap: nil},
+		{name: "[err1, err2]", input: []error{err1, err2}, error: err1, unwrap: err2},
+		{name: "[err1, nil, err2]", input: []error{err1, nil, err2}, error: err1, unwrap: err2},
+		{name: "[nil, err1, nil, err2, nil]", input: []error{nil, err1, nil, err2, nil}, error: err1, unwrap: err2},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := chainer.Chain(tt.input...)
-			if got := err.Error(); tt.error != got {
+			got := chainer.Chain(tt.input...)
+			if !errors.Is(got, tt.error) {
 				t.Errorf("want: %q, got: %q", tt.error, got)
 			}
-			v, ok := err.(interface{ Unwrap() []error }) //nolint:errorlint
-			if !ok {
-				t.Fatal("expected implement Unwrap() []error interface, but not")
-			}
-			if got := v.Unwrap(); !reflect.DeepEqual(got, tt.unwrap) {
-				t.Errorf("want: %+v, got: %+v", tt.unwrap, got)
+			if unwrapped := errors.Unwrap(got); !errors.Is(unwrapped, tt.unwrap) {
+				t.Errorf("Unwrap(): want: %+v, got: %+v", tt.unwrap, got)
 			}
 		})
 	}
