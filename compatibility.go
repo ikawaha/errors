@@ -2,8 +2,6 @@ package errors
 
 import (
 	stderrs "errors"
-
-	"github.com/ikawaha/errors/contexter"
 )
 
 // As is provided for compatibility with errors.As.
@@ -26,7 +24,7 @@ func Join(errs ...error) error {
 func New(text string) error {
 	ret := stderrs.New(text)
 	if stacktraceCapture {
-		ret = contexter.WithStacktrace(ret, 1)
+		ret = WithStacktraceSkip(ret, 1)
 	}
 	return ret
 }
