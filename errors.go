@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/ikawaha/errors/chainer"
-	"github.com/ikawaha/errors/contexter"
 )
 
 var stacktraceCapture = true
@@ -20,16 +19,16 @@ func StacktraceCapture(b bool) {
 func Errorf(format string, a ...any) error {
 	ret := fmt.Errorf(format, a...)
 	if stacktraceCapture {
-		ret = contexter.WithStacktrace(ret, 1)
+		ret = WithStacktraceSkip(ret, 1)
 	}
 	return ret
 }
 
 // Wrap is provided for compatibility with github.com/pkg/errors.Wrap.
 func Wrap(err error, text string) error {
-	ret := Errorf("%s: %w", text, err)
+	ret := fmt.Errorf("%s: %w", text, err)
 	if stacktraceCapture {
-		ret = contexter.WithStacktrace(ret, 1)
+		ret = WithStacktraceSkip(ret, 1)
 	}
 	return ret
 }
@@ -42,15 +41,4 @@ func NewWithErrors(text string, errs ...error) error {
 	arg = append(arg, stderrs.New(text))
 	arg = append(arg, errs...)
 	return chainer.Chain(arg...)
-}
-
-// WithStacktrace captures the stack trace.
-func WithStacktrace(err error) error {
-	return contexter.WithStacktrace(err, 1)
-}
-
-// Stacktrace returns the stack trace attached to the error.
-func Stacktrace(err error) string {
-	ret := contexter.StackTrace(err)
-	return ret
 }
