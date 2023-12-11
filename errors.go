@@ -26,7 +26,22 @@ func Errorf(format string, a ...any) error {
 
 // Wrap is provided for compatibility with github.com/pkg/errors.Wrap.
 func Wrap(err error, text string) error {
+	if err == nil {
+		return nil
+	}
 	ret := fmt.Errorf("%s: %w", text, err)
+	if stacktraceCapture {
+		ret = WithStacktraceSkip(ret, 1)
+	}
+	return ret
+}
+
+// Wrapf is provided for compatibility with github.com/pkg/errors.Wrapf.
+func Wrapf(err error, format string, a ...any) error {
+	if err == nil {
+		return nil
+	}
+	ret := fmt.Errorf("%s: %w", fmt.Sprintf(format, a...), err)
 	if stacktraceCapture {
 		ret = WithStacktraceSkip(ret, 1)
 	}
