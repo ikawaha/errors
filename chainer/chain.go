@@ -1,5 +1,7 @@
 package chainer
 
+import "bytes"
+
 type errChain struct {
 	errs []error
 }
@@ -27,6 +29,18 @@ func Chain(errs ...error) error {
 // Error returns the head of the error chain.
 func (e *errChain) Error() string {
 	return e.errs[0].Error()
+}
+
+// Cause returns the messages of the remaining errors except the head error, joined by a newline.
+func (e *errChain) Cause() string {
+	var b bytes.Buffer
+	for i, v := range e.errs[1:] {
+		if i != 0 {
+			b.WriteString("\n")
+		}
+		b.WriteString(v.Error())
+	}
+	return b.String()
 }
 
 // Unwrap implements Wrapper interface.
