@@ -2,6 +2,7 @@ package chainer_test
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -52,7 +53,7 @@ func TestChain(t *testing.T) {
 	}
 }
 
-func Test_Is(t *testing.T) {
+func TestIs(t *testing.T) {
 	err1 := errors.New("err1")
 	err2 := errors.New("err2")
 	err3 := errors.New("err3")
@@ -72,6 +73,40 @@ func Test_Is(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := errors.Is(chainer.Chain(tt.errs...), tt.target); got != tt.want {
 				t.Errorf("expected %t, but %t", tt.want, got)
+			}
+		})
+	}
+}
+
+func TestCause(t *testing.T) {
+	err1 := errors.New("err1")
+	err2 := errors.New("err2")
+	err3 := errors.New("err3")
+	tests := []struct {
+		name  string
+		err   error
+		cause bool
+		want  string
+	}{
+		{name: "Cause(errors.Join(err1, err2))", err: errors.Join(err1, err2), cause: false, want: "err1"},
+		{name: "Cause([err1, err2])", err: chainer.Chain(err1, err2), cause: true, want: "err2"},
+		{name: "Cause([err1, err2, err3])", err: chainer.Chain(err1, err2, err3), cause: true, want: "err2\nerr3"},
+
+		{name: "Cause([err1, err2])", err: fmt.Errorf("Wrap(%w)", chainer.Chain(err1, err2, err3)), cause: true, want: "err2\nerr3"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var c interface{ Cause() string }
+			got := errors.As(tt.err, &c)
+			if got != tt.cause {
+				t.Errorf("expected %t, but %t", tt.cause, got)
+				return
+			}
+			if !got {
+				return
+			}
+			if c.Cause() != tt.want {
+				t.Errorf("expected %s, but %s", tt.want, c.Cause())
 			}
 		})
 	}
