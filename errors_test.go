@@ -77,3 +77,20 @@ func TestWithStacktrace(t *testing.T) {
 		}
 	})
 }
+
+func TestErrorf(t *testing.T) {
+	t.Run("verb: %w", func(t *testing.T) {
+		err0 := errors.New("err0")
+		err := errors.Errorf("wrapped: %w", err0)
+		if !errors.Is(err, err0) {
+			t.Errorf("%%w should be able to be detected by errors.Is, but it was not.")
+		}
+	})
+	t.Run("verb: %v", func(t *testing.T) {
+		err0 := errors.New("err0")
+		err := errors.Errorf("does not wrapped: %v", err0)
+		if errors.Is(err, err0) {
+			t.Errorf("%%v should not be able to be detected by errors.Is, but it was.")
+		}
+	})
+}
